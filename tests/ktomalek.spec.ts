@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test"
-import { unescape } from "querystring"
 import { alphabetical, unique } from "radash"
 
 const discordWebhook = process.env.DISCORD_WEBHOOK!
