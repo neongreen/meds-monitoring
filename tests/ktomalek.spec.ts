@@ -1,65 +1,108 @@
 import { test, expect } from "@playwright/test"
+import { unescape } from "querystring"
 import { alphabetical, unique } from "radash"
 
 const discordWebhook = process.env.DISCORD_WEBHOOK!
 
-test("Medikinet CR 20mg", async ({ page }) => {
-  const drugName = "Medikinet CR 20 mg"
-  const pharmacy = "Przyokopowa 33"
+type Monitor = {
+  // Thing to enter in the search box
+  searchQuery: string
+  // Full name of the drug. Example: "Medikinet 20 mg"
+  drug: string
+  // Pharmacy address in Warsaw
+  pharmacy: string
+}
 
-  await page.goto("https://ktomalek.pl/")
-  await page.getByRole("button", { name: "Akceptuję i przechodzę do" }).click()
-  await page.getByPlaceholder("Miasto, ulica").fill(`Warszawa, ${pharmacy}`)
-  await page.getByRole("button", { name: "Szukaj adresu" }).click()
-  await page.getByPlaceholder("Wpisz nazwę leku").fill(drugName)
-  await page.getByRole("button", { name: "Szukaj leku" }).click()
-  await page
-    .locator(".kontenerWyszukanychLekow", { hasText: drugName })
-    .locator("a", { hasText: "Sprawdź dostępność w aptece" })
-    .click()
+const monitors: Monitor[] = [
+  {
+    searchQuery: "Medikinet CR 20 mg",
+    drug: "Medikinet CR 20 mg",
+    pharmacy: "Przyokopowa 33",
+  },
+  {
+    searchQuery: "Medikinet 20 mg",
+    drug: "Medikinet 20 mg",
+    pharmacy: "Światowida 47",
+  },
+]
 
-  let pharmacies: string[] = []
-  // Try to locate the pharmacy on the page at least several times (loading can be slow)
-  let found = false
-  for (let i = 0; i < 10; i++) {
-    await page.waitForTimeout(1000)
-    // Get all pharmacy addresses
-    const newPharmacies = alphabetical(
-      unique(
-        await page
-          .locator(".results-item")
-          .filter({ hasText: "Wybrane opakowanie jest dostępne" })
-          .locator("a", { hasText: "Warszawa," })
-          .allTextContents()
-      ),
-      (x) => x
-    )
-    // Log pharmacies if we got smth new
-    if (JSON.stringify(pharmacies) !== JSON.stringify(newPharmacies)) {
-      pharmacies = newPharmacies
-      console.log(pharmacies)
+for (const monitor of monitors) {
+  test(`${monitor.drug} at ${monitor.pharmacy}`, async ({ page }) => {
+    await page.goto("https://ktomalek.pl/")
+    await page
+      .getByRole("button", { name: "Akceptuję i przechodzę do" })
+      .click()
+    await page
+      .getByPlaceholder("Miasto, ulica")
+      .fill(`Warszawa, ${monitor.pharmacy}`)
+    await page.getByRole("button", { name: "Szukaj adresu" }).click()
+
+    await page.getByPlaceholder("Wpisz nazwę leku").fill(monitor.searchQuery)
+    await page.getByRole("button", { name: "Szukaj leku" }).click()
+    await page
+      .getByText("Wybierz poszukiwane opakowanie z listy poniżej")
+      .first()
+      .waitFor()
+
+    // Expand all headings if there are several drug brands
+    const unexpandedSection = page
+      .locator("#lekiWyniki")
+      .getByLabel(/Rozwiń listę leków/)
+      .first()
+    while (await unexpandedSection.isVisible()) {
+      await unexpandedSection.click()
     }
-    // Check if the pharmacy is in the list
-    if (
-      pharmacies.some((x) => x.toLowerCase().includes(pharmacy.toLowerCase()))
-    ) {
-      found = true
-      break
+
+    await page
+      .locator(".kontenerWyszukanychLekow", { hasText: monitor.drug })
+      .locator("a", { hasText: "Sprawdź dostępność w aptece" })
+      .click()
+
+    let pharmacies: string[] = []
+    // Try to locate the pharmacy on the page at least several times (loading can be slow)
+    let found = false
+    for (let i = 0; i < 10; i++) {
+      await page.waitForTimeout(1000)
+      // Get all pharmacy addresses
+      const newPharmacies = alphabetical(
+        unique(
+          await page
+            .locator(".results-item")
+            .filter({ hasText: "Wybrane opakowanie jest dostępne" })
+            .locator("a", { hasText: "Warszawa," })
+            .allTextContents()
+        ),
+        (x) => x
+      )
+      // Log pharmacies if we got smth new
+      if (JSON.stringify(pharmacies) !== JSON.stringify(newPharmacies)) {
+        pharmacies = newPharmacies
+        console.log(pharmacies)
+      }
+      // Check if the pharmacy is in the list
+      if (
+        pharmacies.some((x) =>
+          x.toLowerCase().includes(monitor.pharmacy.toLowerCase())
+        )
+      ) {
+        found = true
+        break
+      }
     }
-  }
 
-  console.log({ found })
+    console.log({ found })
 
-  // Notify on success
-  if (found) {
-    await fetch(discordWebhook, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: `${drugName} is available at ${pharmacy}`,
-      }),
-    })
-  }
-})
+    // Notify on success
+    if (found) {
+      await fetch(discordWebhook, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: `${monitor.drug} is available at ${monitor.pharmacy}`,
+        }),
+      })
+    }
+  })
+}
