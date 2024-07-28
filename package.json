@@ -1,0 +1,21 @@
+{
+  "name": "meds-monitoring",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "radash": "^12.1.0"
+  },
+  "volta": {
+    "node": "20.16.0"
+  }
+}
