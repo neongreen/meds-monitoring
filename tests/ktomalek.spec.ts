@@ -5,14 +5,11 @@ const discordWebhook = process.env.DISCORD_WEBHOOK!
 
 test("Medikinet CR 20mg", async ({ page }) => {
   const drugName = "Medikinet CR 20 mg"
-  const searchLocation = "Przyokopowa 33"
-  const targetPharmacy = "Przyokopowa 33 Lok. B2"
+  const pharmacy = "Przyokopowa 33"
 
   await page.goto("https://ktomalek.pl/")
   await page.getByRole("button", { name: "Akceptuję i przechodzę do" }).click()
-  await page
-    .getByPlaceholder("Miasto, ulica")
-    .fill(`Warszawa, ${searchLocation}`)
+  await page.getByPlaceholder("Miasto, ulica").fill(`Warszawa, ${pharmacy}`)
   await page.getByRole("button", { name: "Szukaj adresu" }).click()
   await page.getByPlaceholder("Wpisz nazwę leku").fill(drugName)
   await page.getByRole("button", { name: "Szukaj leku" }).click()
@@ -22,7 +19,10 @@ test("Medikinet CR 20mg", async ({ page }) => {
     .click()
 
   let pharmacies: string[] = []
-  await expect(async () => {
+  // Try to locate the pharmacy on the page at least several times (loading can be slow)
+  let found = false
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(1000)
     // Get all pharmacy addresses
     const newPharmacies = alphabetical(
       unique(
@@ -37,19 +37,29 @@ test("Medikinet CR 20mg", async ({ page }) => {
     // Log pharmacies if we got smth new
     if (JSON.stringify(pharmacies) !== JSON.stringify(newPharmacies)) {
       pharmacies = newPharmacies
-      console.log(JSON.stringify(pharmacies))
+      console.log(pharmacies)
     }
-    expect(pharmacies).toContain(`Warszawa, ${targetPharmacy}`)
-  }).toPass()
+    // Check if the pharmacy is in the list
+    if (
+      pharmacies.some((x) => x.toLowerCase().includes(pharmacy.toLowerCase()))
+    ) {
+      found = true
+      break
+    }
+  }
+
+  console.log({ found })
 
   // Notify on success
-  await fetch(discordWebhook, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content: `${drugName} is available at ${targetPharmacy}`,
-    }),
-  })
+  if (found) {
+    await fetch(discordWebhook, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content: `${drugName} is available at ${pharmacy}`,
+      }),
+    })
+  }
 })
