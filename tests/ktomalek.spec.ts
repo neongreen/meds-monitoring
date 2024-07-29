@@ -37,11 +37,11 @@ for (const monitor of monitors) {
     await page
       .getByPlaceholder("Miasto, ulica")
       .fill(`Warszawa, ${monitor.pharmacy}`)
+    await page.getByRole("button", { name: "Szukaj adresu" }).click()
 
     await page.waitForTimeout(1000)
     await page.getByPlaceholder("Wpisz nazwę leku").fill(monitor.searchQuery)
 
-    // Wait for the search results to appear
     await page
       .getByText("Wybierz poszukiwane opakowanie z listy poniżej")
       .first()
