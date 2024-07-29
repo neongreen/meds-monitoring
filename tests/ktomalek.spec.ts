@@ -81,7 +81,7 @@ for (const monitor of monitors) {
       // Log pharmacies if we got smth new
       if (JSON.stringify(pharmacies) !== JSON.stringify(newPharmacies)) {
         pharmacies = newPharmacies
-        console.log(testName, pharmacies)
+        console.log(`${testName}: found in pharmacies:`, pharmacies)
       }
       // Check if the pharmacy is in the list
       if (
@@ -94,10 +94,9 @@ for (const monitor of monitors) {
       }
     }
 
-    console.log(testName, `pharmacy on the list: ${found}`)
-
     // Notify on success
     if (found) {
+      console.log(`${testName}: pharmacy is on the list, notifying in Discord`)
       await fetch(discordWebhook, {
         method: "POST",
         headers: {
@@ -107,6 +106,8 @@ for (const monitor of monitors) {
           content: `${monitor.drug} is available at ${monitor.pharmacy}`,
         }),
       })
+    } else {
+      console.log(`${testName}: pharmacy is not on the list`)
     }
   })
 }
