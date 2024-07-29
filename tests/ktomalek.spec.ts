@@ -31,13 +31,17 @@ for (const monitor of monitors) {
     await page
       .getByRole("button", { name: "Akceptuję i przechodzę do" })
       .click()
+
+    // No idea why, but on CI this fails sometimes so we add delays
+    await page.waitForTimeout(1000)
     await page
       .getByPlaceholder("Miasto, ulica")
       .fill(`Warszawa, ${monitor.pharmacy}`)
-    await page.getByRole("button", { name: "Szukaj adresu" }).click()
 
+    await page.waitForTimeout(1000)
     await page.getByPlaceholder("Wpisz nazwę leku").fill(monitor.searchQuery)
-    await page.getByRole("button", { name: "Szukaj leku" }).click()
+
+    // Wait for the search results to appear
     await page
       .getByText("Wybierz poszukiwane opakowanie z listy poniżej")
       .first()
