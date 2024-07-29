@@ -26,7 +26,8 @@ const monitors: Monitor[] = [
 ]
 
 for (const monitor of monitors) {
-  test(`${monitor.drug} at ${monitor.pharmacy}`, async ({ page }) => {
+  const testName = `${monitor.drug} at ${monitor.pharmacy}`
+  test(testName, async ({ page }) => {
     await page.goto("https://ktomalek.pl/")
     await page
       .getByRole("button", { name: "Akceptuję i przechodzę do" })
@@ -80,7 +81,7 @@ for (const monitor of monitors) {
       // Log pharmacies if we got smth new
       if (JSON.stringify(pharmacies) !== JSON.stringify(newPharmacies)) {
         pharmacies = newPharmacies
-        console.log(pharmacies)
+        console.log(testName, pharmacies)
       }
       // Check if the pharmacy is in the list
       if (
@@ -93,7 +94,7 @@ for (const monitor of monitors) {
       }
     }
 
-    console.log({ found })
+    console.log(testName, `pharmacy on the list: ${found}`)
 
     // Notify on success
     if (found) {
