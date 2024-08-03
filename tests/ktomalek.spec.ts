@@ -94,6 +94,12 @@ for (const monitor of monitors) {
       }
     }
 
+    if (pharmacies.length === 0) {
+      throw new Error(
+        `${testName}: no pharmacies found at all; something is wrong?`
+      )
+    }
+
     // Notify on success
     if (found) {
       console.log(`${testName}: pharmacy is on the list, notifying in Discord`)
