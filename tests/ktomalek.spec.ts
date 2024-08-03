@@ -71,7 +71,9 @@ for (const monitor of monitors) {
       const newPharmacies = alphabetical(
         unique(
           await page
-            .locator("#rodzajeAptek .results-item a", { hasText: "Warszawa," })
+            .locator("#rodzajeAptek .results-item:visible a:visible", {
+              hasText: "Warszawa,",
+            })
             .allTextContents()
         ),
         (x) => x
@@ -100,7 +102,9 @@ for (const monitor of monitors) {
 
     // Notify on success
     if (found) {
-      console.log(`${testName}: pharmacy is on the list, notifying in Discord`)
+      console.log(
+        `${testName}: target pharmacy is on the list, notifying in Discord`
+      )
       await fetch(discordWebhook, {
         method: "POST",
         headers: {
@@ -111,7 +115,7 @@ for (const monitor of monitors) {
         }),
       })
     } else {
-      console.log(`${testName}: pharmacy is not on the list`)
+      console.log(`${testName}: target pharmacy is not on the list`)
     }
   })
 }
