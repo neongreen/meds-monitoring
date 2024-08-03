@@ -107,9 +107,7 @@ for (const monitor of monitors) {
       )
       await fetch(discordWebhook, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: `${monitor.drug} is available at ${monitor.pharmacy}`,
         }),
