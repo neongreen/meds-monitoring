@@ -71,9 +71,7 @@ for (const monitor of monitors) {
       const newPharmacies = alphabetical(
         unique(
           await page
-            .locator(".results-item")
-            .filter({ hasText: "Wybrane opakowanie jest dostępne" })
-            .locator("a", { hasText: "Warszawa," })
+            .locator("#rodzajeAptek .results-item a", { hasText: "Warszawa," })
             .allTextContents()
         ),
         (x) => x
@@ -83,7 +81,7 @@ for (const monitor of monitors) {
         pharmacies = newPharmacies
         console.log(`${testName}: found in pharmacies:`, pharmacies)
       }
-      // Check if the pharmacy is in the list
+      // Check if the pharmacy is on the list
       if (
         pharmacies.some((x) =>
           x.toLowerCase().includes(monitor.pharmacy.toLowerCase())
