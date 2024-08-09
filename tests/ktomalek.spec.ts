@@ -71,9 +71,12 @@ for (const monitor of monitors) {
       const newPharmacies = alphabetical(
         unique(
           await page
-            .locator("#rodzajeAptek .results-item:visible a:visible", {
-              hasText: "Warszawa,",
-            })
+            .locator("#rodzajeAptek .results-item:visible")
+            .locator(
+              page
+                .locator('[onclick*="pokazAptekeNaMapie"], .icon-location ~ a')
+                .or(page.locator("a", { hasText: "Warszawa," }))
+            )
             .allTextContents()
         ),
         (x) => x
