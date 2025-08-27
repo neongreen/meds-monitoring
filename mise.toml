@@ -8,3 +8,7 @@ run = "pnpm exec playwright install"
 [tasks.run]
 description = "Run the search once"
 run = "pnpm exec playwright test"
+
+[tasks."run:debug"]
+description = "Run the search once in the debug mode, with GUI test inspector"
+run = "pnpm exec playwright test --debug"
