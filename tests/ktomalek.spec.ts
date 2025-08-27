@@ -8,20 +8,16 @@ type Monitor = {
   searchQuery: string
   // Full name of the drug. Example: "Medikinet 20 mg"
   drug: string
-  // Pharmacy address in Warsaw
+  // Pharmacy address in Warsaw.
+  // TODO: allow searching for "anything in warsaw"
   pharmacy: string
 }
 
 const monitors: Monitor[] = [
   {
-    searchQuery: "Medikinet CR 20 mg",
-    drug: "Medikinet CR 20 mg",
+    searchQuery: "Elvanse 70 mg",
+    drug: "Elvanse 70 mg",
     pharmacy: "Przyokopowa 33",
-  },
-  {
-    searchQuery: "Medikinet 20 mg",
-    drug: "Medikinet 20 mg",
-    pharmacy: "Światowida 47",
   },
 ]
 

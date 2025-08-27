@@ -1,0 +1,10 @@
+[env]
+'_'.file.path = ".env.yaml"
+
+[tasks.setup-playwright]
+description = "Download playwright browsers"
+run = "pnpm exec playwright install"
+
+[tasks.run]
+description = "Run the search once"
+run = "pnpm exec playwright test"
