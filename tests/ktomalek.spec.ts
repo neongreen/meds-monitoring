@@ -6,23 +6,46 @@ const discordWebhook = process.env.DISCORD_WEBHOOK!
 type Monitor = {
   // Thing to enter in the search box
   searchQuery: string
-  // Full name of the drug. Example: "Medikinet 20 mg"
+  // Full name of the drug. Example: "Medikinet"
   drug: string
+  // Dosage of the drug. Example: "20 mg"
+  dosage: string
+  // Start location
+  locationQuery: string
   // Pharmacy address in Warsaw.
-  // TODO: allow searching for "anything in warsaw"
-  pharmacy: string
+  pharmacyFilter: (x: string) => boolean
 }
 
 const monitors: Monitor[] = [
   {
     searchQuery: "Elvanse 70 mg",
-    drug: "Elvanse 70 mg",
-    pharmacy: "Przyokopowa 33",
+    drug: "Elvanse",
+    dosage: "70 mg",
+    // List of towns: Warszawa and nearby towns (up to ~1h by train)
+    // Examples: Warszawa, Pruszków, Piaseczno, Legionowo, Otwock, Grodzisk Mazowiecki, Mińsk Mazowiecki, Nowy Dwór Mazowiecki, Wołomin, Piastów, Sulejówek, Marki, Ząbki, Józefów, Milanówek, Brwinów, Łomianki, Konstancin-Jeziorna, Piaseczno, etc.
+    locationQuery: "Warszawa",
+    pharmacyFilter: (x) => {
+      const warsawNearby = [
+        "Warszawa",
+        "Pruszków",
+        "Piaseczno",
+        "Legionowo",
+        "Otwock",
+        "Grodzisk Mazowiecki",
+        "Mińsk Mazowiecki",
+        "Nowy Dwór Mazowiecki",
+      ]
+      return (
+        warsawNearby.some((y) => x.includes(y)) &&
+        // Aug 27, 2025: it's already reserved
+        !x.includes("Al. Lotników 22")
+      )
+    },
   },
 ]
 
 for (const monitor of monitors) {
-  const testName = `${monitor.drug} at ${monitor.pharmacy}`
+  const testName = `${monitor.drug} ${monitor.dosage} at ${monitor.locationQuery}`
   test(testName, async ({ page }) => {
     await page.goto("https://ktomalek.pl/")
     await page
@@ -31,9 +54,7 @@ for (const monitor of monitors) {
 
     // No idea why, but on CI this fails sometimes so we add delays
     await page.waitForTimeout(1000)
-    await page
-      .getByPlaceholder("Miasto, ulica")
-      .fill(`Warszawa, ${monitor.pharmacy}`)
+    await page.getByPlaceholder("Miasto, ulica").fill(monitor.locationQuery)
     await page.getByRole("button", { name: "Szukaj adresu" }).click()
 
     await page.waitForTimeout(1000)
@@ -54,11 +75,14 @@ for (const monitor of monitors) {
     }
 
     await page
-      .locator(".kontenerWyszukanychLekow", { hasText: monitor.drug })
+      .locator(".kontenerWyszukanychLekow")
+      .filter({ hasText: monitor.drug })
+      .filter({ hasText: monitor.dosage })
       .locator("a", { hasText: "Sprawdź dostępność w aptece" })
       .click()
 
     let pharmacies: string[] = []
+    let filteredPharmacies: string[] = []
     // Try to locate the pharmacy on the page at least several times (loading can be slow)
     let found = false
     for (let i = 0; i < 10; i++) {
@@ -82,12 +106,10 @@ for (const monitor of monitors) {
         pharmacies = newPharmacies
         console.log(`${testName}: found in pharmacies:`, pharmacies)
       }
-      // Check if the pharmacy is on the list
-      if (
-        pharmacies.some((x) =>
-          x.toLowerCase().includes(monitor.pharmacy.toLowerCase())
-        )
-      ) {
+      // Check if there are any pharmacies that match the filter
+      filteredPharmacies = pharmacies.filter(monitor.pharmacyFilter)
+      console.log(`${testName}: filtered:`, filteredPharmacies)
+      if (filteredPharmacies.length > 0) {
         found = true
         break
       }
@@ -101,18 +123,22 @@ for (const monitor of monitors) {
 
     // Notify on success
     if (found) {
-      console.log(
-        `${testName}: target pharmacy is on the list, notifying in Discord`
+      console.log(`${testName}: pharmacies found, notifying in Discord`)
+      await postToDiscord(
+        `${monitor.drug} ${
+          monitor.dosage
+        } is available at ${filteredPharmacies.join(", ")}`
       )
-      await fetch(discordWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `${monitor.drug} is available at ${monitor.pharmacy}`,
-        }),
-      })
     } else {
-      console.log(`${testName}: target pharmacy is not on the list`)
+      console.log(`${testName}: no pharmacies found`)
     }
+  })
+}
+
+async function postToDiscord(message: string) {
+  await fetch(discordWebhook, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: message }),
   })
 }
