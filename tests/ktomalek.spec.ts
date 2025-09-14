@@ -35,11 +35,7 @@ const monitors: Monitor[] = [
         "Mińsk Mazowiecki",
         "Nowy Dwór Mazowiecki",
       ]
-      return (
-        warsawNearby.some((y) => x.includes(y)) &&
-        // Aug 27, 2025: it's already reserved
-        !x.includes("Al. Lotników 22")
-      )
+      return warsawNearby.some((y) => x.includes(y))
     },
   },
 ]
