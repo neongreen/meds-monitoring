@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test"
 import { alphabetical, unique } from "radash"
 
 const discordWebhook = process.env.DISCORD_WEBHOOK!
+const pushoverToken = process.env.PUSHOVER_TOKEN!
+const pushoverUserKey = process.env.PUSHOVER_KEY!
 
 type Monitor = {
   // Thing to enter in the search box
@@ -119,12 +121,14 @@ for (const monitor of monitors) {
 
     // Notify on success
     if (found) {
-      console.log(`${testName}: pharmacies found, notifying in Discord`)
-      await postToDiscord(
-        `${monitor.drug} ${
-          monitor.dosage
-        } is available at ${filteredPharmacies.join(", ")}`
+      const message = `${monitor.drug} ${
+        monitor.dosage
+      } is available at ${filteredPharmacies.join(", ")}`
+
+      console.log(
+        `${testName}: pharmacies found, notifying in Discord and Pushover`
       )
+      await Promise.all([postToDiscord(message), postToPushover(message)])
     } else {
       console.log(`${testName}: no pharmacies found`)
     }
@@ -136,5 +140,21 @@ async function postToDiscord(message: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content: message }),
+  })
+}
+
+async function postToPushover(message: string) {
+  const formData = new URLSearchParams({
+    token: pushoverToken,
+    user: pushoverUserKey,
+    message: message,
+    title: "Meds Monitoring",
+    priority: "1", // High priority - bypasses quiet hours
+  })
+
+  await fetch("https://api.pushover.net/1/messages.json", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: formData,
   })
 }

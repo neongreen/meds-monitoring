@@ -12,3 +12,7 @@ run = "pnpm exec playwright test"
 [tasks."run:debug"]
 description = "Run the search once in the debug mode, with GUI test inspector"
 run = "pnpm exec playwright test --debug"
+
+[tasks."test-pushover"]
+description = "Test sending a Pushover notification"
+run = "curl -s -X POST https://api.pushover.net/1/messages.json -d \"token=${PUSHOVER_TOKEN}&user=${PUSHOVER_KEY}&message=Test notification from meds-monitoring&title=Meds Monitoring&priority=1\" | jq"

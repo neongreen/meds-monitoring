@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 * * * *" # Every hour
+    - cron: "*/10 * * * *" # Every 10 minutes
 jobs:
   test:
     timeout-minutes: 20
