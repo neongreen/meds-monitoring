@@ -23,6 +23,8 @@ jobs:
           curl -LO https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64
           mv sops-v3.10.2.linux.amd64 /usr/local/bin/sops
           chmod +x /usr/local/bin/sops
+          echo 'SOPS_AGE_KEY=${{ secrets.AGE_SECRET_KEY }}' >> $GITHUB_ENV
+
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
       - name: Run Playwright tests
